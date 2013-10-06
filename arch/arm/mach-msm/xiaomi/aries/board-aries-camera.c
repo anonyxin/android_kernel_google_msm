@@ -582,10 +582,7 @@ static __init void aries_fixup_cam(void)
 	int ret;
 	int gpio_vcm_en;
 
-	if (xiaomi_get_board_revno() > HW_REV_1_0)
-		gpio_vcm_en = GPIO_CAM_VCM_EN_11;
-	else
-		gpio_vcm_en = GPIO_CAM_VCM_EN;
+	gpio_vcm_en = GPIO_CAM_VCM_EN;
 
 	ret = gpio_request_one(gpio_vcm_en, GPIOF_INIT_HIGH, "vcm_en");
 	if (ret < 0) {

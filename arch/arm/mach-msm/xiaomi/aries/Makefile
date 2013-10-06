@@ -8,8 +8,6 @@ obj-$(CONFIG_MACH_APQ8064_ARIES) += board-aries.o \
 	board-aries-regulator.o \
 	board-aries-misc.o \
 	board-aries-sound.o \
-	board-aries-storage.o \
-	board-aries-nfc.o \
-	board-aries-earjack-debugger.o
+	board-aries-storage.o
 
 CFLAGS_board-aries-display.o += -Idrivers/video

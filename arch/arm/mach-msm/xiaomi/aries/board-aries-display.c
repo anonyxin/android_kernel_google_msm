@@ -102,39 +102,6 @@ static int msm_fb_detect_panel(const char *name)
 	return 0;
 }
 
-#ifdef CONFIG_LCD_KCAL
-struct kcal_data kcal_value;
-#endif
-
-#ifdef CONFIG_UPDATE_LCDC_LUT
-extern unsigned int lcd_color_preset_lut[];
-int update_preset_lcdc_lut(void)
-{
-	struct fb_cmap cmap;
-	int ret = 0;
-
-	cmap.start = 0;
-	cmap.len = 256;
-	cmap.transp = NULL;
-
-#ifdef CONFIG_LCD_KCAL
-	cmap.red = (uint16_t *)&(kcal_value.red);
-	cmap.green = (uint16_t *)&(kcal_value.green);
-	cmap.blue = (uint16_t *)&(kcal_value.blue);
-#else
-	cmap.red = NULL;
-	cmap.green = NULL;
-	cmap.blue = NULL;
-#endif
-
-	ret = mdp_preset_lut_update_lcdc(&cmap, lcd_color_preset_lut);
-	if (ret)
-		pr_err("%s: failed to set lut! %d\n", __func__, ret);
-
-	return ret;
-}
-#endif
-
 static struct msm_fb_platform_data msm_fb_pdata = {
 	.detect_client = msm_fb_detect_panel,
 };
@@ -273,42 +240,6 @@ void __init apq8064_mdp_writeback(struct memtype_reserve* reserve_table)
 #endif
 }
 
-#ifdef CONFIG_LCD_KCAL
-int kcal_set_values(int kcal_r, int kcal_g, int kcal_b)
-{
-	kcal_value.red = kcal_r;
-	kcal_value.green = kcal_g;
-	kcal_value.blue = kcal_b;
-	return 0;
-}
-
-static int kcal_get_values(int *kcal_r, int *kcal_g, int *kcal_b)
-{
-	*kcal_r = kcal_value.red;
-	*kcal_g = kcal_value.green;
-	*kcal_b = kcal_value.blue;
-	return 0;
-}
-
-static int kcal_refresh_values(void)
-{
-	return update_preset_lcdc_lut();
-}
-
-static struct kcal_platform_data kcal_pdata = {
-	.set_values = kcal_set_values,
-	.get_values = kcal_get_values,
-	.refresh_display = kcal_refresh_values
-};
-
-static struct platform_device kcal_platrom_device = {
-	.name   = "kcal_ctrl",
-	.dev = {
-		.platform_data = &kcal_pdata,
-	}
-};
-#endif
-
 static struct resource hdmi_msm_resources[] = {
 	{
 		.name  = "hdmi_msm_qfprom_addr",
@@ -385,7 +316,7 @@ static struct platform_device wfd_device = {
 static bool dsi_power_on = false;
 static int mipi_dsi_panel_power(int on)
 {
-	static struct regulator *reg_l8, *reg_l2, *reg_lvs6, *ext_dsv_load;
+	static struct regulator *reg_l8, *reg_l2, *reg_lvs6;
 	static int gpio42;
 	int rc;
 
@@ -412,15 +343,6 @@ static int mipi_dsi_panel_power(int on)
 		if (rc) {
 			pr_err("request gpio 42 failed, rc=%d\n", rc);
 			return -ENODEV;
-		}
-
-		if (xiaomi_get_board_revno() > HW_REV_C) {
-			ext_dsv_load = regulator_get(NULL, "ext_dsv_load");
-			if (IS_ERR(ext_dsv_load)) {
-				pr_err("could not get ext_dsv_load, rc = %ld\n",
-					PTR_ERR(ext_dsv_load));
-				return -ENODEV;
-			}
 		}
 
 		reg_l8 = regulator_get(&msm_mipi_dsi1_device.dev, "dsi_vci");
@@ -459,14 +381,6 @@ static int mipi_dsi_panel_power(int on)
 		dsi_power_on = true;
 	}
 	if (on) {
-
-		if (xiaomi_get_board_revno() > HW_REV_C) {
-			rc = regulator_enable(ext_dsv_load);
-			if (rc) {
-				pr_err("enable ext_dsv_load failed, rc=%d\n", rc);
-				return -ENODEV;
-			}
-		}
 
 		rc = regulator_set_optimum_mode(reg_l8, 100000);
 		if (rc < 0) {
@@ -556,14 +470,6 @@ static int mipi_dsi_panel_power(int on)
 		if (rc < 0) {
 			pr_err("set_optimum_mode l2 failed, rc=%d\n", rc);
 			return -EINVAL;
-		}
-
-		if (xiaomi_get_board_revno() > HW_REV_C) {
-			rc = regulator_disable(ext_dsv_load);
-			if (rc) {
-				pr_err("disable ext_dsv_load  failed, rc=%d\n", rc);
-				return -ENODEV;
-			}
 		}
 	}
 
@@ -913,9 +819,6 @@ static struct platform_device mipi_dsi_lgit_panel_device = {
 static struct platform_device *aries_panel_devices[] __initdata = {
 #if defined(CONFIG_FB_MSM_MIPI_LGIT_VIDEO_WXGA_PT)
 	&mipi_dsi_lgit_panel_device,
-#endif
-#ifdef CONFIG_LCD_KCAL
-	&kcal_platrom_device,
 #endif
 };
 

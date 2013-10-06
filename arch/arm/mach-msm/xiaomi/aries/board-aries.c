@@ -1729,15 +1729,6 @@ static void __init apq8064_init_buses(void)
 	msm_bus_8064_cpss_fpb.dev.platform_data = &msm_bus_8064_cpss_fpb_pdata;
 } 
 
-static struct platform_device apq8064_device_ext_dsv_load_vreg __devinitdata = {
-	.name	= GPIO_REGULATOR_DEV_NAME,
-	.id	= APQ8064_EXT_DSV_LOAD_EN_GPIO,
-	.dev	= {
-		.platform_data =
-			&apq8064_gpio_regulator_pdata[GPIO_VREG_ID_EXT_DSV_LOAD],
-	},
-};
-
 static struct platform_device apq8064_device_rpm_regulator __devinitdata = {
 	.name	= "rpm-regulator",
 	.id	= -1,
@@ -1770,10 +1761,6 @@ static struct platform_device *common_devices[] __initdata = {
 	&apq8064_device_acpuclk,
 	&apq8064_device_dmov,
 	&apq8064_device_ssbi_pmic2,
-	&apq8064_device_ext_dsv_load_vreg,
-#ifdef CONFIG_WIRELESS_CHARGER
-	&wireless_charger,
-#endif
 	&batt_temp_ctrl,
 	&msm_device_smd_apq8064,
 	&apq8064_device_otg,
@@ -2098,42 +2085,6 @@ static void __init apq8064_allocate_memory_regions(void)
 	apq8064_allocate_fb_region();
 }
 
-#ifdef CONFIG_EARJACK_DEBUGGER
-static int earjack_debugger_init(void)
-{
-	int rc = 0;
-	static struct regulator *debugger_reg = NULL;
-
-	if (NULL == debugger_reg) {
-		debugger_reg= regulator_get(NULL, "earjack_debug");
-		if (IS_ERR(debugger_reg)) {
-			rc = PTR_ERR(debugger_reg);
-			pr_err("%s: regulator_get earjack_debug failed. rc=%d\n",
-					__func__, rc);
-			goto out;
-		}
-		rc = regulator_set_voltage(debugger_reg, 3000000, 3000000);
-		if (rc ) {
-			pr_err("%s: regulator_set_voltage earjack_debug failed rc=%d\n",
-					__func__, rc);
-			goto vreg_put;
-		}
-	}
-	rc = regulator_enable(debugger_reg);
-	if (rc) {
-		pr_err("%s: regulator_enable earjack_debug failed rc=%d\n",
-				__func__, rc);
-		goto vreg_put;
-	}
-	goto out;
-
-vreg_put:
-	regulator_put(debugger_reg);
-out:
-	return rc;
-}
-#endif
-
 static void __init apq8064_aries_init(void)
 {
 	if (meminfo_init(SYS_MEMORY, SZ_256M) < 0)
@@ -2143,19 +2094,12 @@ static void __init apq8064_aries_init(void)
 	xiaomi_add_panic_handler_devices();
 	xiaomi_add_backlight_devices();
 	xiaomi_add_sound_devices();
-	xiaomi_add_bcm2079x_device();
-#ifdef CONFIG_XIAOMI_QFPROM_INTERFACE
-	xiaomi_add_qfprom_devices();
-#endif
 	msm_rotator_set_split_iommu_domain();
 	platform_add_devices(cdp_devices, ARRAY_SIZE(cdp_devices));
 	spi_register_board_info(spi_board_info,
 					ARRAY_SIZE(spi_board_info));
 
 	if (xiaomi_get_uart_mode()) {
-#ifdef CONFIG_EARJACK_DEBUGGER
-		earjack_debugger_init();
-#endif
 		platform_add_devices(uart_devices, ARRAY_SIZE(uart_devices));
 	}
 	pr_info("[NORMAL-DEBUG] apq8064_device_uart_gsbi4.id : %d",  apq8064_device_uart_gsbi4.id);

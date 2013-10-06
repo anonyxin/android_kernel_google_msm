@@ -52,10 +52,7 @@ extern int msm8064_pm8921_regulator_pdata_len __devinitdata;
 #define GPIO_VREG_ID_AVC_5V		3
 #define GPIO_VREG_ID_AVC_3P3V		4
 
-#define GPIO_VREG_ID_EXT_DSV_LOAD	0
-
 #define APQ8064_EXT_3P3V_REG_EN_GPIO	77
-#define APQ8064_EXT_DSV_LOAD_EN_GPIO	86
 
 extern struct gpio_regulator_platform_data
 	apq8064_gpio_regulator_pdata[] __devinitdata;
@@ -73,14 +70,10 @@ int __init apq8064_add_sdcc(unsigned int controller,
 		struct mmc_platform_data *plat);
 extern void __init xiaomi_add_sound_devices(void);
 extern void __init xiaomi_add_backlight_devices(void);
-void __init xiaomi_add_bcm2079x_device(void);
 void apq8064_init_mmc(void);
 void apq8064_init_gpiomux(void);
 void apq8064_init_pmic(void);
 
-#ifdef CONFIG_WIRELESS_CHARGER
-extern struct platform_device wireless_charger;
-#endif
 extern struct platform_device batt_temp_ctrl;
 
 extern struct msm_camera_board_info apq8064_camera_board_info;

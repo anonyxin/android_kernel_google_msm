@@ -26,7 +26,6 @@
 #endif
 
 #include "board-aries.h"
-#include "board-aries-earjack-debugger.h"
 
 
 #define TPA2028D_ADDRESS (0xB0>>1)
@@ -129,41 +128,12 @@ static void __init xiaomi_add_i2c_tpa2028d_devices(void)
 
 static void enable_external_mic_bias(int status)
 {
-	static struct regulator *reg_mic_bias = NULL;
 	static int prev_on;
-	int rc = 0;
 
 	if (status == prev_on)
 		return;
 
-	if (xiaomi_get_board_revno() > HW_REV_C) {
-		if (!reg_mic_bias) {
-			reg_mic_bias = regulator_get(NULL, "mic_bias");
-			if (IS_ERR(reg_mic_bias)) {
-				pr_err("%s: could not regulator_get\n",
-						__func__);
-				reg_mic_bias = NULL;
-				return;
-			}
-		}
-
-		if (status) {
-			rc = regulator_enable(reg_mic_bias);
-			if (rc)
-				pr_err("%s: regulator enable failed\n",
-						__func__);
-			pr_debug("%s: mic_bias is on\n", __func__);
-		} else {
-			rc = regulator_disable(reg_mic_bias);
-			if (rc)
-				pr_warn("%s: regulator disable failed\n",
-						__func__);
-			pr_debug("%s: mic_bias is off\n", __func__);
-		}
-	}
-
-	if (xiaomi_get_board_revno() < HW_REV_1_0)
-		gpio_set_value_cansleep(GPIO_EAR_MIC_BIAS_EN, status);
+	gpio_set_value_cansleep(GPIO_EAR_MIC_BIAS_EN, status);
 	prev_on = status;
 }
 
@@ -217,16 +187,6 @@ static struct fsa8008_platform_data xiaomi_hs_pdata = {
 	.set_uart_console = set_uart_console,
 };
 
-static __init void aries_fixed_audio(void)
-{
-	if (xiaomi_get_board_revno() >= HW_REV_1_0)
-		xiaomi_hs_pdata.gpio_mic_bias_en = -1;
-	if (xiaomi_get_board_revno() > HW_REV_1_0) {
-		xiaomi_hs_pdata.gpio_detect = GPIO_EAR_SENSE_N_REV11;
-		xiaomi_hs_pdata.gpio_detect_can_wakeup = 1;
-	}
-}
-
 static struct platform_device xiaomi_hsd_device = {
 	.name = "fsa8008",
 	.id   = -1,
@@ -235,28 +195,12 @@ static struct platform_device xiaomi_hsd_device = {
 	},
 };
 
-#define GPIO_EARJACK_DEBUGGER_TRIGGER       PM8921_GPIO_PM_TO_SYS(13)
-static struct earjack_debugger_platform_data earjack_debugger_pdata = {
-	.gpio_trigger = GPIO_EARJACK_DEBUGGER_TRIGGER,
-	.set_uart_console = set_uart_console,
-};
-
-static struct platform_device earjack_debugger_device = {
-	.name = "earjack-debugger-trigger",
-	.id = -1,
-	.dev = {
-		.platform_data = &earjack_debugger_pdata,
-	},
-};
-
 static struct platform_device *sound_devices[] __initdata = {
 	&xiaomi_hsd_device,
-	&earjack_debugger_device,
 };
 
 void __init xiaomi_add_sound_devices(void)
 {
-	aries_fixed_audio();
 	xiaomi_add_i2c_tpa2028d_devices();
 	platform_add_devices(sound_devices, ARRAY_SIZE(sound_devices));
 }

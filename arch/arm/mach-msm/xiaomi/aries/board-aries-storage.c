@@ -253,19 +253,9 @@ static struct mmc_platform_data *apq8064_sdc3_pdata = &sdc3_data;
 static struct mmc_platform_data *apq8064_sdc3_pdata;
 #endif
 
-static void __init aries_fixup_sdc1(void)
-{
-	if (xiaomi_get_board_revno() >= HW_REV_D) {
-		/* enable the packed write on eMMC 4.5 */
-		apq8064_sdc1_pdata->packed_write =
-			MMC_CAP2_PACKED_WR | MMC_CAP2_PACKED_WR_CONTROL;
-	}
-}
-
 void __init apq8064_init_mmc(void)
 {
 	if (apq8064_sdc1_pdata) {
-		aries_fixup_sdc1();
 		apq8064_add_sdcc(1, apq8064_sdc1_pdata);
 	}
 
