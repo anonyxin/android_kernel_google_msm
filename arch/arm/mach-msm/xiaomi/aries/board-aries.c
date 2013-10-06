@@ -1729,6 +1729,15 @@ static void __init apq8064_init_buses(void)
 	msm_bus_8064_cpss_fpb.dev.platform_data = &msm_bus_8064_cpss_fpb_pdata;
 } 
 
+static struct platform_device apq8064_device_ext_5p4v_vreg __devinitdata = {
+	.name  = GPIO_REGULATOR_DEV_NAME,
+	.id  = PM8921_GPIO_PM_TO_SYS(11),
+	.dev  = {
+		.platform_data =
+			&apq8064_gpio_regulator_pdata[GPIO_VREG_ID_EXT_5P4V],
+	},
+};
+
 static struct platform_device apq8064_device_rpm_regulator __devinitdata = {
 	.name	= "rpm-regulator",
 	.id	= -1,
@@ -1761,6 +1770,7 @@ static struct platform_device *common_devices[] __initdata = {
 	&apq8064_device_acpuclk,
 	&apq8064_device_dmov,
 	&apq8064_device_ssbi_pmic2,
+	&apq8064_device_ext_5p4v_vreg,
 	&batt_temp_ctrl,
 	&msm_device_smd_apq8064,
 	&apq8064_device_otg,
