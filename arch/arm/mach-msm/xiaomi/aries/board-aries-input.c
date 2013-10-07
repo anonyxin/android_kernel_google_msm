@@ -40,6 +40,10 @@
 #include <linux/i2c/atmel_mxt_ts.h>
 #endif
 
+#ifdef CONFIG_RMI4_I2C
+#include <linux/rmi.h>
+#endif
+
 #include <mach/board_xiaomi.h>
 #include "board-aries.h"
 
@@ -48,6 +52,8 @@
 #define ATMEL_TS_RESET_GPIO			PM8921_GPIO_PM_TO_SYS(8)
 #define ATMEL_TS_IRQ_GPIO			6
 #define ATMEL_TS_POWER_GPIO			PM8921_GPIO_PM_TO_SYS(5)
+#define RMI4_TS_POWER_GPIO			PM8921_GPIO_PM_TO_SYS(5)
+#define RMI4_TS_I2C_INT_GPIO		6
 
 /* touch screen device */
 #define APQ8064_GSBI3_QUP_I2C_BUS_ID            3
@@ -348,12 +354,90 @@ static struct mxt_platform_data mxt336s_platform_data = {
 };
 #endif
 
+#ifdef CONFIG_RMI4_I2C
+#include "firmware/rmi4/BM001.h"
+#define TPK_FIRMWARE_BM001_NAME	"rmi4/BM001.img"
+DECLARE_BUILTIN_FIRMWARE(TPK_FIRMWARE_BM001_NAME, firmware_rmi4_bm001);
+
+static unsigned char rmi_key_map[] = {KEY_MENU, KEY_HOME, KEY_BACK};
+static struct rmi_button_map rmi_button_map = {
+	.nbuttons		= ARRAY_SIZE(rmi_key_map),
+	.map			= rmi_key_map,
+};
+
+static int rmi_gpio_config(void *gpio_data, bool configure)
+{
+	int rc = 0;
+
+	if (configure) {
+		rc = gpio_request(RMI4_TS_POWER_GPIO, "rmi4_gpio_power");
+		if (!rc) {
+			rc = gpio_direction_output(RMI4_TS_POWER_GPIO, 0);
+			if (rc) {
+				gpio_free(RMI4_TS_POWER_GPIO);
+                pr_err("%s: unable to set direction gpio %d\n", __func__, RMI4_TS_POWER_GPIO);
+				return rc;
+			}
+		} else {
+			pr_err("%s: unable to request power gpio %d\n", __func__, RMI4_TS_POWER_GPIO);
+			return rc;
+		}
+
+		rc = gpio_request(RMI4_TS_I2C_INT_GPIO, "rmi_intr");
+		if (rc < 0) {
+			pr_err("%s: gpio_request fail", __func__);
+			return rc;
+		}
+
+		rc = gpio_direction_input(RMI4_TS_I2C_INT_GPIO);
+		if (rc < 0) {
+			pr_err("%s: gpio_direction_input fail", __func__);
+			gpio_free(RMI4_TS_I2C_INT_GPIO);
+			return rc;
+		}
+
+		gpio_set_value(RMI4_TS_POWER_GPIO, 1);
+	} else {
+		gpio_set_value(RMI4_TS_POWER_GPIO, 0);
+		gpio_free(RMI4_TS_I2C_INT_GPIO);
+		gpio_free(RMI4_TS_POWER_GPIO);
+	}
+
+	msleep(100);
+	return rc;
+}
+
+static struct rmi_device_platform_data rmi_data = {
+	.driver_name		= "rmi_generic",
+	.sensor_name		= "s3202",
+	.attn_gpio		= RMI4_TS_I2C_INT_GPIO,
+	.attn_polarity		= RMI_ATTN_ACTIVE_LOW,
+	.level_triggered	= true,
+	.gpio_config		= rmi_gpio_config,
+	.axis_align		= {
+	    .flip_x			= 1,
+	    .flip_y			= 1,
+	},
+	.reset_delay_ms		= 65,
+	.power_management	= {
+	    .nosleep		= RMI_F01_NOSLEEP_ON,
+	},
+	.f1a_button_map		= &rmi_button_map,
+};
+#endif
+
 static struct i2c_board_info touch_device_info[] = {
 #ifdef CONFIG_TOUCHSCREEN_ATMEL_MXT
 	{
 		I2C_BOARD_INFO("atmel_mxt_ts", 0x4b),
 		.platform_data = &mxt336s_platform_data,
 		.irq = MSM_GPIO_TO_INT(ATMEL_TS_I2C_INT_GPIO),
+	},
+#endif
+#ifdef CONFIG_RMI4_I2C
+    {
+		I2C_BOARD_INFO("rmi_i2c", 0x70),
+		.platform_data = &rmi_data,
 	},
 #endif
 };
