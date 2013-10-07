@@ -348,7 +348,7 @@ static int apq8064_pm8921_therm_mitigation[] = {
 	1100,
 	700,
 	600,
-	400,
+	325,
 };
 
 static int batt_temp_ctrl_level[] = {
@@ -367,15 +367,15 @@ static int batt_temp_ctrl_level[] = {
  * Typ.2100mAh capacity, Li-Ion Polymer 3.8V
  * Battery/VDD voltage programmable range, 20mV steps.
  */
-#define MAX_VOLTAGE_MV		4360
+#define MAX_VOLTAGE_MV		4200
 #define CHG_TERM_MA		100
-#define MAX_BATT_CHG_I_MA	900
-#define WARM_BATT_CHG_I_MA	400
-#define VBATDET_DELTA_MV	50
+#define MAX_BATT_CHG_I_MA	1000
+#define WARM_BATT_CHG_I_MA	350
+#define VBATDET_DELTA_MV	20
 #define EOC_CHECK_SOC	1
 
 static struct pm8921_charger_platform_data apq8064_pm8921_chg_pdata __devinitdata = {
-	.safety_time  = 512,
+	.safety_time  = 480,
 	.update_time  = 60000,
 	.max_voltage  = MAX_VOLTAGE_MV,
 	.min_voltage  = 3200,
@@ -383,8 +383,9 @@ static struct pm8921_charger_platform_data apq8064_pm8921_chg_pdata __devinitdat
 	.resume_voltage_delta  = VBATDET_DELTA_MV,
 	.term_current  = CHG_TERM_MA,
 
-	.cool_temp  = INT_MIN,
-	.warm_temp  = INT_MIN,
+	.cool_temp  = 0,
+	.warm_temp  = 45,
+	.max_bat_chg_current  = 1000,
 	.cool_bat_chg_current  = 350,
 	.warm_bat_chg_current  = WARM_BATT_CHG_I_MA,
 	.cold_thr  = 1,
@@ -397,7 +398,7 @@ static struct pm8921_charger_platform_data apq8064_pm8921_chg_pdata __devinitdat
 	.thermal_mitigation  = apq8064_pm8921_therm_mitigation,
 	.thermal_levels  = ARRAY_SIZE(apq8064_pm8921_therm_mitigation),
 	.led_src_config  = LED_SRC_5V,
-	.rconn_mohm	 = 37,
+	.rconn_mohm	 = 50,
 	.eoc_check_soc  = EOC_CHECK_SOC,
 };
 
@@ -409,128 +410,16 @@ apq8064_pm8xxx_ccadc_pdata = {
 
 static struct pm8921_bms_platform_data
 apq8064_pm8921_bms_pdata __devinitdata = {
-	.battery_type  = BATT_LGE,
+	.battery_type  = BATT_UNKNOWN,
 	.r_sense  = 10,
-	.v_cutoff  = 3500,
+	.v_cutoff  = 3400,
 	.max_voltage_uv  = MAX_VOLTAGE_MV * 1000,
-	.rconn_mohm  = 37,
-	.shutdown_soc_valid_limit  = 20,
+	.rconn_mohm  = 50,
+	.shutdown_soc_valid_limit  = 10,
 	.adjust_soc_low_threshold  = 25,
 	.chg_term_ua  = CHG_TERM_MA * 1000,
 	.eoc_check_soc  = EOC_CHECK_SOC,
 	.bms_support_wlc  = 0,
-};
-
-/* battery data */
-static struct single_row_lut batt_2100_fcc_temp = {
-	.x = {-20, 0, 25, 40, 60 },
-	.y = {2068, 2064, 2103, 2072, 2084},
-	.cols = 5
-};
-
-static struct single_row_lut batt_2100_fcc_sf = {
-	.x     = {0 },
-	.y     = {100 },
-	.cols  = 1
-};
-
-static struct sf_lut batt_2100_rbatt_sf =  {
-	.rows = 28,
-	.cols = 5,
-	.row_entries = {-20, 0, 25, 40, 60 },
-	.percent =  {100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50,
-		     45, 40, 35, 30, 25, 20, 15, 10,
-		     9, 8, 7, 6, 5, 4, 3, 2, 1 },
-	.sf = {
-		{639,265,100,75,66},
-		{700,262,104,79,68},
-		{727,259,106,81,70},
-		{746,258,106,82,72},
-		{764,260,106,83,74},
-		{785,263,106,84,74},
-		{818,268,100,84,75},
-		{855,272,99,83,74},
-		{901,275,100,76,68},
-		{955,280,103,78,69},
-		{1016,287,107,80,71},
-		{1080,297,112,83,73},
-		{1147,309,116,87,75},
-		{1221,324,120,90,73},
-		{1308,345,124,90,72},
-		{1436,397,125,89,73},
-		{1673,500,128,87,70},
-		{2288,587,156,102,78},
-		{1681,361,140,94,75},
-		{1886,368,145,95,75},
-		{2140,377,148,94,73},
-		{2462,388,151,93,73},
-		{2877,412,160,96,74},
-		{3422,473,174,99,77},
-		{4273,562,195,105,81},
-		{5469,719,228,112,84},
-		{8749,1722,274,120,93},
-		{20487,18766,897,170,1139},
-	}
-};
-static struct pc_temp_ocv_lut batt_2100_pc_temp_ocv = {
-	.rows = 29,
-	.cols = 5,
-	.temp = {-20, 0, 25, 40, 60 },
-	.percent = {100, 95, 90, 85, 80, 75, 70, 65, 60, 55, 50,
-		    45, 40, 35, 30, 25, 20, 15, 10,
-		    9, 8, 7, 6, 5, 4, 3, 2, 1, 0 },
-	.ocv = {
-		{4331, 4325, 4327, 4317, 4315},
-		{4237, 4252, 4261, 4253, 4253},
-		{4163, 4190, 4202, 4195, 4196},
-		{4091, 4132, 4147, 4140, 4141},
-		{4034, 4074, 4093, 4088, 4088},
-		{3990, 4017, 4043, 4039, 4039},
-		{3952, 3964, 3992, 3993, 3993},
-		{3920, 3923, 3937, 3953, 3952},
-		{3890, 3887, 3895, 3913, 3914},
-		{3863, 3854, 3860, 3864, 3865},
-		{3839, 3825, 3831, 3832, 3833},
-		{3815, 3804, 3809, 3808, 3809},
-		{3794, 3786, 3791, 3789, 3790},
-		{3775, 3772, 3775, 3774, 3774},
-		{3757, 3758, 3764, 3763, 3755},
-		{3739, 3741, 3750, 3747, 3735},
-		{3720, 3724, 3725, 3721, 3710},
-		{3694, 3707, 3689, 3686, 3673},
-		{3654, 3684, 3674, 3669, 3659},
-		{3645, 3679, 3670, 3667, 3657},
-		{3635, 3673, 3664, 3663, 3653},
-		{3620, 3662, 3648, 3655, 3640},
-		{3601, 3643, 3612, 3631, 3611},
-		{3575, 3611, 3563, 3591, 3570},
-		{3538, 3562, 3501, 3540, 3521},
-		{3484, 3495, 3430, 3480, 3460},
-		{3405, 3403, 3347, 3401, 3377},
-		{3284, 3276, 3223, 3280, 3244},
-		{3000, 3000, 3000, 3000, 3000}
-	}
-};
-
-static struct sf_lut batt_2100_pc_sf = {
-	.rows = 1,
-	.cols = 1,
-	.row_entries = {0 },
-	.percent = {100 },
-	.sf = {
-		{100 }
-	}
-};
-
-/* used in drivers/power/pm8921-bms.c */
-struct pm8921_bms_battery_data xiaomi_2100_aries_data =  {
-	.fcc = 2100,
-	.fcc_temp_lut = &batt_2100_fcc_temp,
-	.fcc_sf_lut = &batt_2100_fcc_sf,
-	.pc_temp_ocv_lut = &batt_2100_pc_temp_ocv,
-	.pc_sf_lut = &batt_2100_pc_sf,
-	.rbatt_sf_lut = &batt_2100_rbatt_sf,
-	.default_rbatt_mohm = 182,
 };
 
 static unsigned int keymap[] = {
