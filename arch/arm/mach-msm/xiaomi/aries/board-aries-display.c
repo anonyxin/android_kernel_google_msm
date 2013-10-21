@@ -671,6 +671,7 @@ static struct msm_panel_common_pdata mipi_hitachi_pdata = {
 	.bl_pwm_disable = lm3530_lcd_backlight_pwm_disable,
 #endif
 	.bl_on_status = lm3530_lcd_backlight_on_status,
+	.power_on_notify = lm3530_lcd_power_on_notify,
 };
 
 static struct platform_device mipi_dsi_hitachi_panel_device = {
