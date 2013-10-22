@@ -112,6 +112,10 @@ static inline void __init xiaomi_add_panic_handler_devices(void)
 void __init xiaomi_add_qfprom_devices(void);
 #endif
 
+#ifdef CONFIG_XIAOMI_PRIMACONFIG_INTERFACE
+void __init xiaomi_add_primaconfig_devices(void);
+#endif
+
 enum xiaomi_boot_mode_type xiaomi_get_boot_mode(void);
 int xiaomi_get_factory_boot(void);
 
