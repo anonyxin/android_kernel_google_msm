@@ -91,6 +91,7 @@ enum mxt_device_state { INIT, APPMODE, BOOTLOADER };
 #define MXT_GEN_ACQUIRE_T8		8
 #define MXT_GEN_DATASOURCE_T53		53
 #define MXT_TOUCH_MULTI_T9		9
+#define MXT_TOUCH_KEYADDTHD_T14		14
 #define MXT_TOUCH_KEYARRAY_T15		15
 #define MXT_TOUCH_PROXIMITY_T23		23
 #define MXT_TOUCH_PROXKEY_T52		52
@@ -116,6 +117,9 @@ enum mxt_device_state { INIT, APPMODE, BOOTLOADER };
 #define MXT_SPT_MESSAGECOUNT_T44	44
 #define MXT_SPT_CTECONFIG_T46		46
 #define MXT_SPT_TIMER_T61		61
+#define MXT_SPT_GOLDENREF_T66		66
+#define MXT_SPT_DYMCFG_T70		70
+#define MXT_SPT_DYMDATA_T71		71
 
 /* MXT_GEN_COMMAND_T6 field */
 #define MXT_COMMAND_RESET	0
@@ -413,6 +417,7 @@ static bool mxt_object_writable(unsigned int type)
 	case MXT_GEN_POWER_T7:
 	case MXT_GEN_ACQUIRE_T8:
 	case MXT_TOUCH_MULTI_T9:
+	case MXT_TOUCH_KEYADDTHD_T14:
 	case MXT_TOUCH_KEYARRAY_T15:
 	case MXT_TOUCH_PROXIMITY_T23:
 	case MXT_TOUCH_PROXKEY_T52:
@@ -436,6 +441,9 @@ static bool mxt_object_writable(unsigned int type)
 	case MXT_SPT_DIGITIZER_T43:
 	case MXT_SPT_CTECONFIG_T46:
 	case MXT_SPT_TIMER_T61:
+	case MXT_SPT_GOLDENREF_T66:
+	case MXT_SPT_DYMCFG_T70:
+	case MXT_SPT_DYMDATA_T71:
 	case MXT_PROCI_ADAPTIVETHRESHOLD_T55:
 		return true;
 	default:
@@ -1598,6 +1606,7 @@ static int mxt_load_fw(struct device *dev, const char *fn)
 	switch (data->info.family_id) {
 	case MXT224_ID:
 	case MXT224E_ID:
+	case MXT336S_ID:
 		max_frame_size = MXT_SINGLE_FW_MAX_FRAME_SIZE;
 		break;
 	case MXT1386_ID:
